@@ -1,12 +1,19 @@
-let info = hmSetting.getDeviceInfo();
-let deviceName = info.deviceName;
-let deviceClass = info.screenShape === 1 ? "circle" : (info.width / info.height) > 0.6 ? "square" : "band" ;
-let isLowRamDevice = deviceClass === "band" ? true : false;
-let deviceRoundRadius = 0;
-let deviceChipset = "";
+interface DeviceInfo {
+  deviceName: string;
+  screenShape: number;
+  width: number;
+  height: number;
+  deviceSource: number;
+}
 
-// What the fuck, real device name didn't match with emulator?
-// Okay, then I'll use deviceSource
+const info: DeviceInfo = hmSetting.getDeviceInfo();
+let deviceName: string = info.deviceName;
+let deviceClass: "circle" | "square" | "band" | "miband" = info.screenShape === 1 ? "circle" : (info.width / info.height) > 0.6 ? "square" : "band";
+let isLowRamDevice: boolean = deviceClass === "band" ? true : false;
+let deviceRoundRadius: number = 0;
+let deviceChipset: string = "";
+
+// Device source mapping
 switch(info.deviceSource) {
   case 260:
   case 261:
@@ -116,4 +123,4 @@ switch(info.deviceSource) {
     break;
 }
 
-export { deviceName, deviceClass, isLowRamDevice, deviceRoundRadius, deviceChipset };
+export { deviceName, deviceClass, isLowRamDevice, deviceRoundRadius, deviceChipset }; 
