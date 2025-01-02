@@ -26,6 +26,8 @@ export class BaseAboutScreen {
   protected iconFile: string;
   protected donateText: string;
   protected donateUrl: string | (() => void) | null;
+  protected helpText: string;
+  protected helpUrl: string;
   protected uninstallText: string;
   protected uninstallConfirm: string;
   protected uninstallResult: string;
@@ -47,6 +49,9 @@ export class BaseAboutScreen {
 
     this.donateText = "";
     this.donateUrl = null;
+    
+    this.helpText = "Help";
+    this.helpUrl = "";
 
     this.uninstallText = "Uninstall";
     this.uninstallConfirm = "Tap again to confirm";
@@ -96,6 +101,23 @@ export class BaseAboutScreen {
       align_h: hmUI.align.CENTER_H
     });
     this.posY += lineHeight;
+
+    if (this.helpUrl) {
+      hmUI.createWidget(hmUI.widget.BUTTON, {
+        x: SCREEN_MARGIN_X + 16,
+        y: this.posY,
+        w: WIDGET_WIDTH - 32,
+        h: BASE_FONT_SIZE * 3,
+        text: this.helpText,
+        text_size: BASE_FONT_SIZE - 2,
+        radius: 24,
+        color: 0xFFFFFF,
+        normal_color: 0x333333,
+        press_color: 0x555555,
+        click_func: () => this.openHelp()
+      });
+      this.posY += BASE_FONT_SIZE * 3 + 16;
+    }
 
     if (this.donateText) {
       hmUI.createWidget(hmUI.widget.BUTTON, {
@@ -195,6 +217,14 @@ export class BaseAboutScreen {
     if(this.donateUrl) {
       hmApp.gotoPage({
         url: this.donateUrl
+      });
+    }
+  }
+
+  protected openHelp(): void {
+    if(this.helpUrl) {
+      hmApp.gotoPage({
+        url: this.helpUrl
       });
     }
   }
