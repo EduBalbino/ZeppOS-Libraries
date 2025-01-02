@@ -2,7 +2,10 @@ import { ListScreen } from "./ListScreen";
 import { WIDGET_WIDTH, SCREEN_MARGIN_X, SCREEN_MARGIN_Y, SCREEN_HEIGHT } from "./UiParams";
 
 export class FontSizeSetupScreen extends ListScreen {
-  start() {
+  protected fontSize: number = 20;
+  private preview!: HmWearableProgram.DeviceSide.HmUI.IHmUIWidget;
+
+  start(): void {
     this.fontSize = this.getSavedFontSize(this.fontSize);
     const margin = Math.min(64, SCREEN_MARGIN_Y);
     hmUI.createWidget(hmUI.widget.BUTTON, {
@@ -52,15 +55,15 @@ export class FontSizeSetupScreen extends ListScreen {
     });
   }
 
-  reload() {
+  protected reload(): void {
     this.preview.setProperty(hmUI.prop.TEXT_SIZE, this.fontSize);
   }
 
-  getSavedFontSize(fallback) {
+  protected getSavedFontSize(fallback: number): number {
     return fallback;
   }
 
-  onChange(val) {
-    // Override
+  protected onChange(val: number): void {
+    // Override me
   }
-}
+} 

@@ -1,12 +1,14 @@
-import {Path} from "./Path";
+import { Path } from "./Path";
 import {
   IS_MI_BAND_7,
   SCREEN_WIDTH,
   SCREEN_MARGIN_X,
   WIDGET_WIDTH,
-  SCREEN_MARGIN_Y, BASE_FONT_SIZE, SCREEN_HEIGHT
+  SCREEN_MARGIN_Y,
+  BASE_FONT_SIZE,
+  SCREEN_HEIGHT
 } from "./UiParams";
-import {deviceName, deviceClass, isLowRamDevice} from "./DeviceIdentifier";
+import { deviceName, deviceClass, isLowRamDevice } from "./DeviceIdentifier";
 
 const info = hmSetting.getDeviceInfo();
 const DEVICE_INFO_DATA = `
@@ -16,6 +18,22 @@ Screen: ${info.width}x${info.height}
 Identified as: ${deviceName} (${deviceClass}${isLowRamDevice ? ", low-ram" : ""})`;
 
 export class BaseAboutScreen {
+  protected appId: number;
+  protected appName: string;
+  protected version: string;
+  protected infoRows: [string, string][];
+  protected iconSize: number;
+  protected iconFile: string;
+  protected donateText: string;
+  protected donateUrl: string | (() => void) | null;
+  protected uninstallText: string;
+  protected uninstallConfirm: string;
+  protected uninstallResult: string;
+  protected hiddenInfo: string;
+  protected posY: number;
+  private deviceInfoGroup!: HmWearableProgram.DeviceSide.HmUI.IHmUIWidget;
+  private confirmed: boolean;
+
   constructor() {
     this.appId = 0;
     this.appName = "AppName";
@@ -35,11 +53,12 @@ export class BaseAboutScreen {
     this.uninstallResult = "Ready, please reboot your device. Click to open settings";
 
     this.hiddenInfo = "";
+    this.confirmed = false;
 
     this.posY = SCREEN_MARGIN_Y;
   }
 
-  drawBasement() {
+  protected drawBasement(): void {
     const iconSize = IS_MI_BAND_7 ? 100 : this.iconSize;
     const lineHeight = Math.floor(BASE_FONT_SIZE * 2);
 
@@ -51,7 +70,7 @@ export class BaseAboutScreen {
     }).addEventListener(hmUI.event.CLICK_UP, () => {
       if(clickCount > 0) return clickCount--;
       this.deviceInfoGroup.setProperty(hmUI.prop.VISIBLE, true);
-    })
+    });
     this.posY += 100;
 
     hmUI.createWidget(hmUI.widget.TEXT, {
@@ -113,7 +132,7 @@ export class BaseAboutScreen {
     }
   }
 
-  uninstall() {
+  protected uninstall(): void {
     if(!this.confirmed) {
       hmUI.showToast({
         text: this.uninstallConfirm
@@ -126,10 +145,10 @@ export class BaseAboutScreen {
     this.onUninstall();
 
     const appDir = new Path("full", "/storage/js_apps/" + dirname);
-    appDir.rmTree();
+    appDir.removeTree();
 
     const dataDir = new Path("full", "/storage/js_apps/data" + dirname);
-    dataDir.rmTree();
+    dataDir.removeTree();
 
     hmApp.setLayerY(0);
     hmUI.setLayerScrolling(false);
@@ -159,28 +178,31 @@ export class BaseAboutScreen {
     }).addEventListener(hmUI.event.CLICK_UP, () => {
       hmApp.startApp({
         url: "Settings_systemScreen",
-        native: true
+        native: true,
+        appid: 0x0001
       });
     });
   }
 
-  onUninstall() {
-
+  protected onUninstall(): void {
+    // Override me
   }
 
-  openDonate() {
-    if(typeof this.donateUrl == "function") 
+  protected openDonate(): void {
+    if(typeof this.donateUrl === "function") 
       return this.donateUrl();
 
-    hmApp.gotoPage({
-      url: this.donateUrl
-    })
+    if(this.donateUrl) {
+      hmApp.gotoPage({
+        url: this.donateUrl
+      });
+    }
   }
 
-  drawInfo() {
+  protected drawInfo(): void {
     const fontMpx = 1.2;
 
-    for (let [name, info] of this.infoRows) {
+    for (const [name, info] of this.infoRows) {
       const metrics = hmUI.getTextLayout(name, {
         text_width: WIDGET_WIDTH,
         text_size: BASE_FONT_SIZE
@@ -218,10 +240,10 @@ export class BaseAboutScreen {
       w: SCREEN_WIDTH,
       h: 2,
       src: ""
-    })
+    });
   }
 
-  buildDeviceInfo() {
+  protected buildDeviceInfo(): void {
     this.deviceInfoGroup = hmUI.createWidget(hmUI.widget.GROUP, {
       x: 0,
       y: 0,
@@ -229,29 +251,31 @@ export class BaseAboutScreen {
       h: SCREEN_HEIGHT
     });
 
-    this.deviceInfoGroup.createWidget(hmUI.widget.FILL_RECT, {
+    hmUI.createWidget(hmUI.widget.FILL_RECT, {
       x: 0,
       y: 0,
       w: SCREEN_WIDTH,
-      h: SCREEN_HEIGHT
+      h: SCREEN_HEIGHT,
+      group: this.deviceInfoGroup
     });
 
-    this.deviceInfoGroup.createWidget(hmUI.widget.TEXT, {
+    hmUI.createWidget(hmUI.widget.TEXT, {
       x: SCREEN_MARGIN_X,
       y: SCREEN_MARGIN_Y,
       w: WIDGET_WIDTH,
       text: DEVICE_INFO_DATA + "\n" + this.hiddenInfo,
       text_style: hmUI.text_style.WRAP,
       text_size: BASE_FONT_SIZE,
-      color: 0xFFFFFF
-    })
+      color: 0xFFFFFF,
+      group: this.deviceInfoGroup
+    });
 
     this.deviceInfoGroup.setProperty(hmUI.prop.VISIBLE, false);
   }
 
-  start() {
+  public start(): void {
     this.drawBasement();
     this.drawInfo();
     this.buildDeviceInfo();
   }
-}
+} 

@@ -2,7 +2,18 @@ import { deviceName, deviceClass } from "../DeviceIdentifier";
 
 const DeviceInfo = hmSetting.getDeviceInfo();
 
-let profile;
+interface DeviceProfile {
+  rowHeight: number;
+  titleHeight: number;
+  screenHeight: number;
+  fontSize: number;
+  buttonFontSize: number;
+  layouts: string[];
+  circle: boolean;
+}
+
+let profile: DeviceProfile;
+
 switch(deviceName) {
   case "Mi Band 7":
     profile = {
@@ -11,7 +22,8 @@ switch(deviceName) {
       screenHeight: 140,
       fontSize: 18,
       buttonFontSize: 24,
-      layouts: ["t9"]
+      layouts: ["t9"],
+      circle: false
     };
     break;
   case "Band 7":
@@ -21,7 +33,8 @@ switch(deviceName) {
       screenHeight: 100,
       fontSize: 18,
       buttonFontSize: 24,
-      layouts: ["t9"]
+      layouts: ["t9"],
+      circle: false
     };
     break;
   case "GTR mini":
@@ -31,8 +44,8 @@ switch(deviceName) {
       screenHeight: 100,
       fontSize: 18,
       buttonFontSize: 24,
-      circle: true,
-      layouts: ["t14"]
+      layouts: ["t9"],
+      circle: true
     };
     break;
   default:
@@ -42,10 +55,10 @@ switch(deviceName) {
       screenHeight: DeviceInfo.height - 48 * 4 - 32 - 64,
       fontSize: 18,
       buttonFontSize: 24,
-      circle: deviceClass === "circle",
-      layouts: ["t14", "qwerty", "t9"]
+      layouts: ["t9"],
+      circle: deviceClass === "circle"
     };
     break;
 }
 
-export default profile;
+export default profile; 
