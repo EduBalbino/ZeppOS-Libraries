@@ -221,6 +221,7 @@ export class ListScreen {
     this.entries.push(entry);
     this.positionY += entry.viewHeight;
   }
+
   get baseRowHeight(): number {
     if (this.fontSize !== this._brh_lastheight) {
       this._brh_lastheight = this.fontSize;
