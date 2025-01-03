@@ -1,6 +1,5 @@
 const deviceID = hmSetting.getDeviceInfo().deviceName;
 export const isMiBand7 = deviceID === "Xiaomi Smart Band 7";
-const appContext = getApp();
 
 type Scope = "assets" | "data" | "full";
 
@@ -137,7 +136,7 @@ export class Path implements FileHandle {
     const length = Math.min(limit, st.size || 0);
     const buffer = new ArrayBuffer(st.size || 0);
     this.open(hmFS.O_RDONLY);
-    hmFS.read(this._f, 0, buffer, length);
+    this.read(buffer, 0, length);
     this.close();
 
     return buffer;
@@ -155,19 +154,37 @@ export class Path implements FileHandle {
   }
 
   public override(buffer: ArrayBuffer): void {
-    this.remove();
+    if (!buffer || typeof buffer !== 'object' || !(buffer instanceof ArrayBuffer)) {
+      throw new Error('Invalid buffer type: expected ArrayBuffer');
+    }
 
+    this.remove();
     this.open(hmFS.O_WRONLY | hmFS.O_CREAT);
-    hmFS.write(this._f, 0, buffer, buffer.byteLength);
-    this.close();
+    
+    try {
+      this.write(buffer, 0, buffer.byteLength);
+    } catch (e) {
+      throw e;
+    } finally {
+      this.close();
+    }
   }
 
   public overrideWithText(text: string): void {
-    this.override(FsTools.strToUtf8(text));
+    if (!text) text = '';
+    const buffer = FsTools.strToUtf8(text);
+    if (!buffer || !(buffer instanceof ArrayBuffer)) {
+      throw new Error('Failed to convert text to ArrayBuffer');
+    }
+    this.override(buffer);
   }
 
   public overrideWithJSON(data: any): void {
-    this.overrideWithText(JSON.stringify(data));
+    const jsonString = JSON.stringify(data);
+    if (!jsonString) {
+      throw new Error('Failed to stringify JSON data');
+    }
+    this.overrideWithText(jsonString);
   }
 
   public copy(destEntry: Path): void {
@@ -221,11 +238,11 @@ export class Path implements FileHandle {
   }
 
   public read(buffer: ArrayBuffer, offset: number, length: number): void {
-    hmFS.read(this._f, offset, buffer, length);
+    (hmFS.read as unknown as (fd: number, buffer: ArrayBuffer, offset: number, length: number) => number)(this._f, buffer, offset, length);
   }
 
   public write(buffer: ArrayBuffer, offset: number, length: number): void {
-    hmFS.write(this._f, offset, buffer, length);
+    (hmFS.write as unknown as (fd: number, buffer: ArrayBuffer, offset: number, length: number) => number)(this._f, buffer, offset, length);
   }
 
   public close(): void {
@@ -234,20 +251,15 @@ export class Path implements FileHandle {
 }
 
 export class FsTools {
-  private static appTags?: [string, string];
+  public static appTags: [number, string];
   private static cachedAppLocation?: [string, string];
 
-  public static getAppTags(): [string, string] {
+  public static getAppTags(): [number, string] {
     if(FsTools.appTags) return FsTools.appTags;
 
-    try {
-      const [id, type] = (appContext._options.globalData as any).appTags;
-      return [id, type];
-    } catch(e) {
-      console.log(`Calling hmApp.packageInfo(), this may cause black screen in some cases. Reason: ${e}`);
-      const packageInfo = hmApp.packageInfo();
-      return [String(packageInfo.appId), packageInfo.type];
-    }
+    console.log('Calling hmApp.packageInfo(), this may cause black screen in some cases.');
+    const packageInfo = hmApp.packageInfo();
+    return [packageInfo.appId, packageInfo.type];
   }
 
   public static getAppLocation(): [string, string] {
@@ -272,6 +284,8 @@ export class FsTools {
 
   // https://stackoverflow.com/questions/18729405/how-to-convert-utf8-string-to-byte-array
   public static strToUtf8(str: string): ArrayBuffer {
+    if (!str) str = '';
+    
     const utf8: number[] = [];
     for (let i = 0; i < str.length; i++) {
       let charcode = str.charCodeAt(i);
@@ -285,9 +299,6 @@ export class FsTools {
           0x80 | (charcode & 0x3f));
       } else {
         i++;
-        // UTF-16 encodes 0x10000-0x10FFFF by
-        // subtracting 0x10000 and splitting the
-        // 20 bits of 0x0-0xFFFFF into two halves
         charcode = 0x10000 + (((charcode & 0x3ff) << 10)
           | (str.charCodeAt(i) & 0x3ff));
         utf8.push(0xf0 | (charcode >> 18),

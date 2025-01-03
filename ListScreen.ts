@@ -502,8 +502,25 @@ export class ListScreen {
     entry.viewHeight = dimensions.rowHeight + 8; // Add margin between rows
     entry.positionY = this.positionY;
 
-    entry.group = this.createWidget(hmUI.widget.GROUP, dimensions.groupConfig);
+    // Create group with background
+    const groupConfig = {
+      x: SCREEN_MARGIN_X,
+      y: entry.positionY,
+      w: WIDGET_WIDTH,
+      h: dimensions.rowHeight
+    };
+    entry.group = hmUI.createWidget(hmUI.widget.GROUP, groupConfig);
     entry.widget = entry.group;
+
+    // Add background with proper styling
+    this.createChildWidget(entry.group, hmUI.widget.FILL_RECT, {
+      x: 0,
+      y: 0,
+      w: WIDGET_WIDTH,
+      h: dimensions.rowHeight,
+      color: 0x111111,
+      radius: 8
+    });
 
     // Use TouchEventManager for touch handling
     if (config.onTap) {
@@ -530,10 +547,11 @@ export class ListScreen {
     // Icon with proper vertical centering
     if (config.icon) {
       const iconY = Math.floor((dimensions.rowHeight - dimensions.iconSize) / 2);
-      entry.iconView = this._createCenteredIcon(entry.group, {
+      entry.iconView = this.createChildWidget(entry.group, hmUI.widget.IMG, {
         x: Math.floor(dimensions.iconSize / 2),
         y: iconY,
-        size: dimensions.iconSize,
+        w: dimensions.iconSize,
+        h: dimensions.iconSize,
         src: config.icon
       });
     }
@@ -553,28 +571,12 @@ export class ListScreen {
       });
     }
 
-    // Create a "hidden" button if provided in config.card
-    if (config.card.hiddenButton) {
-      const buttonWidth = 96;
-      this.createChildWidget(entry.group, hmUI.widget.BUTTON, {
-        x: WIDGET_WIDTH - buttonWidth,
-        y: 0,
-        w: buttonWidth,
-        h: dimensions.rowHeight,
-        text: config.card.hiddenButton,
-        text_size: this.fontSize - 4,
-        color: 0xFFFFFF,
-        normal_color: this.accentColor,
-        press_color: 0x005588,
-        radius: config.card.radius ?? 8,
-        text_style: hmUI.text_style.NONE,
-        click_func: config.card.hiddenButtonCallback
-      });
-    }
-
     entry._setPositionY = (y: number) => {
       entry.positionY = y;
-      this.updatePosition(entry.group!, y, dimensions.groupConfig);
+      if (entry.group) {
+        entry.group.setProperty(hmUI.prop.Y, y);
+        entry.group.setProperty(hmUI.prop.H, dimensions.rowHeight);
+      }
     };
 
     this._registerRow(entry);
